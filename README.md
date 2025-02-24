@@ -2,11 +2,11 @@
 
 ## Overview
 
-MedusaJS NextJS storefront starter with minimal modifications, including [Mercado Pago Payment Brick](https://www.mercadopago.com.uy/developers/es/docs/checkout-bricks/payment-brick/introduction), to test [@NicolasGorga/medusa-payment-mercadopago](https://github.com/NicolasGorga/medusa-payment-mercadopago) faster
+MedusaJS NextJS storefront starter with minimal modifications, including [Mercado Pago Payment Brick](https://www.mercadopago.com.uy/developers/es/docs/checkout-bricks/payment-brick/introduction), to test [@nicogorga/medusa-payment-mercadopago](https://github.com/NicolasGorga/medusa-payment-mercadopago) faster
 
 ## Prerequisites
 
-- @NicolasGorga/medusa-payment-mercadopago [prerequisites](https://github.com/NicolasGorga/medusa-payment-mercadopago)
+- @nicogorga/medusa-payment-mercadopago [prerequisites](https://github.com/NicolasGorga/medusa-payment-mercadopago)
 
 ## Installation
 
