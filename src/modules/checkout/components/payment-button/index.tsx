@@ -1,12 +1,14 @@
 "use client"
 
-import { isManual, isStripe } from "@lib/constants"
+import { isManual, isMercadopago, isStripe } from "@lib/constants"
 import { placeOrder } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
 import React, { useState } from "react"
 import ErrorMessage from "../error-message"
+import { useMercadopagoFormData } from "../payment-form-provider"
+import { confirmMercadopagoPayment } from "@lib/data/payment"
 
 type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
@@ -35,6 +37,14 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
           data-testid={dataTestId}
         />
       )
+      case isMercadopago(paymentSession?.provider_id):
+        return (
+          <MercadopagoPaymentButton
+            notReady={false}
+            cart={cart}
+            data-testid={dataTestId}
+          />
+        )
     case isManual(paymentSession?.provider_id):
       return (
         <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
@@ -130,6 +140,67 @@ const StripePaymentButton = ({
 
         return
       })
+  }
+
+  return (
+    <>
+      <Button
+        disabled={disabled || notReady}
+        onClick={handlePayment}
+        size="large"
+        isLoading={submitting}
+        data-testid={dataTestId}
+      >
+        Place order
+      </Button>
+      <ErrorMessage
+        error={errorMessage}
+        data-testid="stripe-payment-error-message"
+      />
+    </>
+  )
+}
+
+const MercadopagoPaymentButton = ({
+  cart,
+  notReady,
+  "data-testid": dataTestId,
+}: {
+  cart: HttpTypes.StoreCart
+  notReady: boolean
+  "data-testid"?: string
+}) => {
+  const [submitting, setSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const onPaymentCompleted = async () => {
+    await placeOrder()
+      .catch((err) => {
+        setErrorMessage(err.message)
+      })
+      .finally(() => {
+        setSubmitting(false)
+      })
+  }
+
+  const { formData, additionalData } = useMercadopagoFormData()
+
+  const session = cart.payment_collection?.payment_sessions?.find(
+    (s) => s.status === "pending"
+  )
+
+  const disabled = false
+
+  const handlePayment = async () => {
+    setSubmitting(true)
+
+    if (!cart || !session) {
+      setSubmitting(false)
+      return
+    }
+
+    await confirmMercadopagoPayment(session.id, formData!.formData!)
+    onPaymentCompleted();
   }
 
   return (

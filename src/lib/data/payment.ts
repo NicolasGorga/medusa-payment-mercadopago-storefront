@@ -3,6 +3,7 @@
 import { sdk } from "@lib/config"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { HttpTypes } from "@medusajs/types"
+import { IPaymentFormData } from "@mercadopago/sdk-react/esm/bricks/payment/type"
 
 export const listCartPaymentMethods = async (regionId: string) => {
   const headers = {
@@ -32,4 +33,25 @@ export const listCartPaymentMethods = async (regionId: string) => {
     .catch(() => {
       return null
     })
+}
+
+export const confirmMercadopagoPayment = async (paymentSessionId: string, paymentData: IPaymentFormData['formData']) => {
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+  return sdk.client.fetch(
+    '/store/mercadopago/payment',
+    {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: {
+        paymentSessionId, 
+        paymentData,
+      }
+    }
+  )
+  .then(res => res)
 }

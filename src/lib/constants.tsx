@@ -33,6 +33,9 @@ export const paymentInfoMap: Record<
   // Add more payment providers here
 }
 
+export const isMercadopago = (providerId?: string) => {
+  return providerId?.startsWith("pp_mercadopago_")
+}
 // This only checks if it is native stripe for card payments, it ignores the other stripe-based providers
 export const isStripe = (providerId?: string) => {
   return providerId?.startsWith("pp_stripe_")

@@ -4,7 +4,8 @@ import { loadStripe } from "@stripe/stripe-js"
 import React from "react"
 import StripeWrapper from "./stripe-wrapper"
 import { HttpTypes } from "@medusajs/types"
-import { isStripe } from "@lib/constants"
+import { isMercadopago, isStripe } from "@lib/constants"
+import MercadopagoWrapper from "./mercadopago-wrapper"
 
 type PaymentWrapperProps = {
   cart: HttpTypes.StoreCart
@@ -14,10 +15,26 @@ type PaymentWrapperProps = {
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_KEY
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null
 
+const mercadopagoKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
+
 const PaymentWrapper: React.FC<PaymentWrapperProps> = ({ cart, children }) => {
   const paymentSession = cart.payment_collection?.payment_sessions?.find(
     (s) => s.status === "pending"
   )
+
+  if (
+    isMercadopago(paymentSession?.provider_id) &&
+    paymentSession 
+  ) {
+    return (
+      <MercadopagoWrapper
+        mercadopagoKey={mercadopagoKey}
+        paymentSession={paymentSession}
+      >
+        {children}
+      </MercadopagoWrapper>
+    )
+  }
 
   if (
     isStripe(paymentSession?.provider_id) &&

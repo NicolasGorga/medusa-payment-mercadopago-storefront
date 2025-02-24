@@ -1,7 +1,7 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import { isStripe as isStripeFunc, paymentInfoMap } from "@lib/constants"
+import { isMercadopago, isStripe as isStripeFunc, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Button, Container, Heading, Text, clx } from "@medusajs/ui"
@@ -12,12 +12,15 @@ import PaymentContainer, {
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
+import { useMercadopagoFormData } from "../payment-form-provider"
+import { Payment as MpPaymentBrick } from "@mercadopago/sdk-react"
+import { StoreCart } from "@medusajs/types"
 
 const Payment = ({
   cart,
   availablePaymentMethods,
 }: {
-  cart: any
+  cart: StoreCart
   availablePaymentMethods: any[]
 }) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
@@ -32,6 +35,8 @@ const Payment = ({
     activeSession?.provider_id ?? ""
   )
 
+  const { setFormData, setAdditionalData, formData, additionalData } = useMercadopagoFormData();
+
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -39,11 +44,12 @@ const Payment = ({
   const isOpen = searchParams.get("step") === "payment"
 
   const isStripe = isStripeFunc(selectedPaymentMethod)
+  const isMp = isMercadopago(selectedPaymentMethod);
 
   const setPaymentMethod = async (method: string) => {
     setError(null)
     setSelectedPaymentMethod(method)
-    if (isStripeFunc(method)) {
+    if (isStripeFunc(method) || isMercadopago(method)) {
       await initiatePaymentSession(cart, {
         provider_id: method,
       })
@@ -73,7 +79,7 @@ const Payment = ({
   }
 
   const handleSubmit = async () => {
-    setIsLoading(true)
+    // setIsLoading(true)
     try {
       const shouldInputCard =
         isStripeFunc(selectedPaymentMethod) && !activeSession
@@ -85,6 +91,22 @@ const Payment = ({
         await initiatePaymentSession(cart, {
           provider_id: selectedPaymentMethod,
         })
+      }
+
+      if (isMp && !window.paymentBrickController) {
+        return;
+      }
+
+      if (isMp) {
+        const additionalData = await window.paymentBrickController!.getAdditionalData();
+        const formData = await window.paymentBrickController!.getFormData();
+        if (additionalData) {
+          setAdditionalData(additionalData);
+        }
+        if (!formData) {
+          return;
+        }
+        setFormData(formData);
       }
 
       if (!shouldInputCard) {
@@ -101,6 +123,18 @@ const Payment = ({
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    //@ts-ignore
+    window?.paymentBrickController?.unmount()
+  }, [selectedPaymentMethod])
+
+  useEffect(() => {
+    return () => {
+      //@ts-ignore
+      window?.paymentBrickController?.unmount()
+    }
+  }, [])
 
   useEffect(() => {
     setError(null)
@@ -163,6 +197,21 @@ const Payment = ({
                   </div>
                 ))}
               </RadioGroup>
+              {isMp && (
+                <MpPaymentBrick
+                  initialization={{
+                    amount: cart.amount || cart.total
+                  }}
+                  customization={{
+                    paymentMethods: { creditCard: "all", debitCard: "all" },
+                    visual: {
+                      hidePaymentButton: true,
+                      hideFormTitle: true,
+                    },
+                  }}
+                  onSubmit={async (param) => await Promise.resolve()}
+                ></MpPaymentBrick>
+              )}
             </>
           )}
 

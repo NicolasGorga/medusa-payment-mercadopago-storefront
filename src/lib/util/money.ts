@@ -24,3 +24,20 @@ export const convertToLocale = ({
       }).format(amount)
     : amount.toString()
 }
+
+const convertToDecimal = (amount: number) => {
+  const divisor = 100
+
+  return Math.floor(amount) / divisor;
+};
+
+/**
+ * Takes an amount, a region, and returns the amount as a decimal including or excluding taxes
+ */
+export const computeAmount = ({
+  amount
+}: {amount: number}) => {
+  const toDecimal = convertToDecimal(amount);
+
+  return toDecimal;
+};
